@@ -1,3 +1,6 @@
+// Copyright 2018 The Redix Authors. All rights reserved.
+// Use of this source code is governed by a Apache 2.0
+// license that can be found in the LICENSE file.
 package main
 
 import (
@@ -14,7 +17,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rs/xid"
 	"github.com/satori/go.uuid"
 )
 
@@ -30,7 +32,7 @@ func uuid4Command(c Context) {
 
 // uniqidCommand - UNIQID
 func uniqidCommand(c Context) {
-	c.WriteString(xid.New().String())
+	c.WriteString(getUniqueString())
 }
 
 // randstrCommand - randstr [<size>, default size is 10]
@@ -140,4 +142,27 @@ func gcCommand(c Context) {
 		return
 	}
 	c.WriteInt(1)
+}
+
+// infoCommand - INFO
+func infoCommand(c Context) {
+	info := map[string]string{
+		"version":            redixVersion,
+		"database":           *flagEngine,
+		"database_size":      strconv.Itoa(int(c.db.Size())),
+		"database_directory": *flagStorageDir,
+		"redis_port":         *flagRESPListenAddr,
+		"http_port":          *flagHTTPListenAddr,
+		"workers":            strconv.Itoa(*flagWorkers),
+	}
+
+	c.WriteArray(len(info))
+	for k, v := range info {
+		c.WriteBulkString(k + " : " + v)
+	}
+}
+
+// echoCommand - ECHO [<arg1> <arg2>]
+func echoCommand(c Context) {
+	c.WriteString(strings.Join(c.args, " "))
 }

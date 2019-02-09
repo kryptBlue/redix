@@ -1,15 +1,29 @@
-Redix
-=======
-> a fast NoSQL DB, that uses the same [RESP](https://redis.io/topics/protocol) protocol and capable to store terabytes of data, also it integrates with your mobile/web apps to add real-time features, soon you can use it as a document store cause it should become a multi-model db. `Redix` is used in production, you can use it in your apps with no worries.
+<p align="center"> 
+      <img src="https://via.placeholder.com/800x200/fff/000/?text=RedixDB" />
+</p>
+
+<p align="center">
+      <a style="display: inline-block" align="center" href="https://travis-ci.com/alash3al/redix"><img alt="Build Status" src="https://travis-ci.com/alash3al/redix.svg?branch=master" /></a>
+      <a style="display: inline-block" align="center" href="https://github.com/alash3al/redix/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/hexpm/l/plug.svg" /></a>
+      <a style="display: inline-block" align="center" href="https://cloud.docker.com/u/alash3al/repository/docker/alash3al/redix"><img alt="Docker" src="https://img.shields.io/docker/pulls/alash3al/redix.svg" /></a>
+      <a style="display: inline-block" align="center" href="https://github.com/alash3al/redix/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/alash3al/redix.svg" /></a>
+</p>
+
+<blockquote align="center">
+
+a fast NoSQL DB, that uses the same <a href="https://redis.io/topics/protocol">RESP</a> protocol and capable to store terabytes of data, also it integrates with your mobile/web apps to add real-time features, soon you can use it as a document store cause it should become a multi-model db. `Redix` is used in production, you can use it in your apps with no worries.
+
+</blockquote>
 
 Features
 =========
 - Core data structure: `KV`, `List`, `Hashmap` with advanced implementations.
 - Advanced Publish/Subscribe using webhook and websocket!
-- Pluggable Storage Engine (`badger`, `bolt`)
+- Pluggable Storage Engine (`badgerdb`, `boltdb`, `leveldb`, `null`, `sqlite`)
 - Very compatible with any `redis client` including `redis-cli`
 - Standalone with no external dependencies
 - Helpers commands for `Time`, `Encode <hex|md5|sha1|sha256|sha512> <payload>`, `RANDINT`, `RANDSTR`
+- Implements `RATELIMIT` helpers natively.
 
 Why
 ===
@@ -17,9 +31,12 @@ Why
 
 Install
 =======
-- from source: `go get github.com/alash3al/redix`.
-- from binaries: go [there](https://github.com/alash3al/redix/releases) and choose your platform based binary, then download and execute from the command line with `-h` flag to see the help text.
-- using docker: `docker run -P -v /path/to/redix-data:/root/redix-data alash3al/redix`
+- Using Homebrew:
+  - Add Homebrew Tap `brew tap alash3al/redix https://github.com/alash3al/redix`
+  - Install Redix `brew install alash3al/redix/redix`
+- From Binaries: go [there](https://github.com/alash3al/redix/releases) and choose your platform based binary, then download and execute from the command line with `-h` flag to see the help text.
+- Using Docker: `docker run -P -v /path/to/redix-data:/root/redix-data alash3al/redix`
+- From Source: `go get github.com/alash3al/redix`.
 
 Configurations
 ============
@@ -100,7 +117,9 @@ Supported Commands
 - `DEL <key1> [<key2> ...]`
 - `EXISTS <key>`
 - `INCR <key> [<by>]`
-- `TTL <key>` returns `-1` if key will never expire, `-2` if it doesn't exists (expired), other wise will returns the `seconds` remain before the key will expire.
+- `TTL <key>` returns `-1` if key will never expire, `-2` if it doesn't exists (expired), otherwise will returns the `seconds` remain before the key will expire.
+- `KEYS [<regexp-pattern>]`
+
 
 ## # HASHES
 > I enhanced the HASH MAP implementation and added some features like TTL per nested key,
@@ -116,6 +135,8 @@ Supported Commands
 - `HEXISTS <HASHMAP> [<key>]`.
 - `HINCR <HASHMAP> <key> [<by>]`
 - `HTTL <HASHMAP> <key>`, the same as `TTL` but for `HASHMAP`
+- `HKEYS <HASHMAP>`
+- `HLEN <HASHMAP>`
 
 ## # LIST
 > I applied a new concept, you can push or push-unique values into the list,
@@ -126,15 +147,23 @@ Supported Commands
 
 - `LPUSH <LIST> <val1> [<val2> ...]` (push the item into the list "it doesn't check for uniqueness, it will append anyway (duplicate)")
 - `LPUSHU <LIST> <val1> [<val2> ...]` (push the item into the list only if it isn't exists)
-- `LGETALL <LIST> [<offset> <size>]`
+- `LRANGE <LIST> [<offset> <size>]`
 - `LREM <LIST> [<val1> <val2> <val3> ...]` (deletes the list itself or values in the list)
 - `LCOUNT <LIST>` (get the list members count)
+- `LCARD <LIST>` (alias of `LCOUNT`)
 - `LSUM <LIST>` (sum the members of the list "in case they were numbers")
 - `LAVG <LIST>` (get the avg of the members of the list "in case they were numbers")
 - `LMIN <LIST>` (get the minimum of the members of the list "in case they were numbers")
 - `LMAX <LIST>` (get the maximum of the members of the list "in case they were numbers")
 - `LSRCH <LIST> <NEEDLE>` (text-search using (string search or regex) in the list)
 - `LSRCHCOUNT <LIST> <NEEDLE>` (size of text-search result using (string search or regex) in the list)
+
+## # SET
+- `SADD <LIST> <val1> [<val2> ...]` (alias of `LUPUSH`)
+- `SMEMBERS <LIST> [<offset> <size>]` (alias of `LRANGE`)
+- `SSCAN <LIST> [<offset> <size>]` (alias of `LRANGE`)
+- `SCARD <LIST>` (aliad of `LCOUNT`)
+- `SREM <LIST> [<val1> <val2> <val3> ...]` (alias of `LREM`)
 
 ## # Pub/Sub
 > `Redix` has very simple pub/sub functionality, you can subscribe to internal logs on the `*` channel or any custom defined channel, and publish to any custom channel.
@@ -146,8 +175,13 @@ Supported Commands
 - `WEBSOCKETOPEN <channel>`, opens a websocket endpoint and returns its id, so you can receive updates through `ws://server.address:port/stream/ws/{generated_id_here}`
 - `WEBSOCKETCLOSE <ID>`, closes the specified websocket endpoint using the above generated id. 
 
+## # Ratelimit
+- `RATELIMITSET <bucket> <limit> <seconds>`, create a new `$bucket` that accepts num of `$limit` of actions per the specified num of `$seconds`, it will returns `1` for success.
+- `RATELIMITTAKE <bucket>`, do an action in the specified `bucket` and take an item from it, it will return `-1` if the bucket not exists or it has unlimited actions `$limit < 1`, `0` if there are no more actions to be done right now, `reminder` of actions on success.
+- `RATELIMITGET <bucket>`, returns array [`$limit`, `$seconds`, `$remaining_time`, `$counter`] information for the specified bucket
+
 ## # Utils
-> a helpers commands
+> some useful utils that you can use within your app to remove some hassle from it.
 
 - `ENCODE <method> <payload>`, encode the specified `<payload>` using the specified `<method>` (`md5`, `sha1`, `sha256`, `sha512`, `hex`)
 - `UUIDV4`, generates a uuid-v4 string, i.e `0b98aa17-eb06-42b8-b39f-fd7ba6aba7cd`.
@@ -157,6 +191,8 @@ Supported Commands
 - `TIME`, returns the current time in `utc`, `seconds` and `nanoseconds`
 - `DBSIZE`, returns the database size in bytes.
 - `GC`, runs the Garbage Collector.
+- `ECHO [<arg1> <arg2> ...]`
+- `INFO`
 
 TODO
 =====
@@ -167,12 +203,8 @@ TODO
 - [x] PubSub Commands
 - [x] Utils Commands
 - [x] Adding BoltDB engine
+- [x] Adding LevelDB engine
+- [x] Adding Null engine
+- [x] Adding SQLite engine
+- [ ] Adding TiKV engine
 - [ ] Adding RAM engine
-- [ ] Writing MyOwn DB Engine 
-- [ ] Writing Test Cases
-- [ ] Document/JSON Commands
-- [ ] GIS Commands
-
-License
-=======
-This project licensed under MIT License

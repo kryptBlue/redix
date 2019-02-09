@@ -1,3 +1,6 @@
+// Copyright 2018 The Redix Authors. All rights reserved.
+// Use of this source code is governed by a Apache 2.0
+// license that can be found in the LICENSE file.
 package main
 
 import (
@@ -31,10 +34,7 @@ func initHTTPServer() error {
 	}
 
 	e.GET("/", func(c echo.Context) error {
-		return c.JSON(200, map[string]interface{}{
-			"success": true,
-			"message": "welcome to redix real-time db :)",
-		})
+		return c.JSON(200, "PONG ;)")
 	})
 
 	e.GET("/stream/ws/:userID", func(c echo.Context) error {

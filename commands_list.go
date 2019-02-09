@@ -1,3 +1,6 @@
+// Copyright 2018 The Redix Authors. All rights reserved.
+// Use of this source code is governed by a Apache 2.0
+// license that can be found in the LICENSE file.
 package main
 
 import (
@@ -7,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/alash3al/redix/kvstore"
-	"github.com/rs/xid"
 )
 
 // lpushCommand - LPUSH <LIST> <val1> [<val2> ...]
@@ -24,7 +26,7 @@ func lpushCommand(c Context) {
 	k, vals = c.args[0], c.args[1:]
 
 	for _, v := range vals {
-		offset := xid.New().String()
+		offset := getUniqueString()
 		key := k + "/{LIST}/" + offset
 		if err := c.db.Set(key, v, -1); err != nil {
 			done = append(done, "")
@@ -87,7 +89,10 @@ func lrangeCommand(c Context) {
 		limit, _ = strconv.Atoi(c.args[2])
 	}
 
+	includeOffsetVals := false
+
 	if offset == "" {
+		includeOffsetVals = true
 		offset = prefix
 	} else {
 		of, err := hex.DecodeString(offset)
@@ -101,7 +106,7 @@ func lrangeCommand(c Context) {
 	data := []string{}
 	loaded := 0
 	err := c.db.Scan(kvstore.ScannerOptions{
-		IncludeOffset: true,
+		IncludeOffset: includeOffsetVals,
 		Offset:        offset,
 		Prefix:        prefix,
 		FetchValues:   true,
@@ -132,12 +137,14 @@ func lrangeCommand(c Context) {
 
 	lastKey = hex.EncodeToString([]byte(lastKey))
 
-	c.WriteArray(2)
+	if limit > 0 {
+		c.WriteArray(2)
 
-	if lastKey != "" {
-		c.WriteBulkString(lastKey)
-	} else {
-		c.WriteNull()
+		if lastKey != "" {
+			c.WriteBulkString(lastKey)
+		} else {
+			c.WriteNull()
+		}
 	}
 
 	c.WriteArray(len(data) / 2)
